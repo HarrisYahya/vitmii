@@ -22,14 +22,15 @@ export default function Categories() {
   }, []);
 
   return (
-    <div className="w-full py-6 px-4">
-      <h2 className="text-xl font-semibold mb-4">Categories</h2>
+    <div className="w-full py-4 px-4">
+      <h2 className="text-2xl font-semibold mb-3 text-white">Categories</h2>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Horizontal scroll like your screenshot */}
+      <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
         {categories.map((cat) => (
           <div
             key={cat.id}
-            className="border rounded p-3 flex flex-col items-center text-center bg-white shadow"
+            className="min-w-[110px] bg-[#1C1C1E] rounded-xl p-3 shadow-md flex-shrink-0 border border-gray-700"
           >
             <img
               src={
@@ -37,9 +38,12 @@ export default function Categories() {
                   ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/categories/${cat.image}`
                   : "/images/placeholder.png"
               }
-              className="h-12 w-12 object-cover rounded mb-2" 
+              className="h-20 w-20 rounded-lg object-cover mx-auto"
             />
-            <p className="font-medium text-sm">{cat.name}</p>
+
+            <p className="text-white text-center mt-2 text-sm font-medium">
+              {cat.name}
+            </p>
           </div>
         ))}
       </div>
