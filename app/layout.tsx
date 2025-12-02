@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeScript />
       </head>
 
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}> {children}</body>
     </html>
   );
 }

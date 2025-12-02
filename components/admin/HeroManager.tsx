@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import React, { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
@@ -20,7 +20,7 @@ export default function HeroManager() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // ======================================================
-  // SELECT FILE + SHOW PREVIEW
+  // SELECT FILE + PREVIEW
   // ======================================================
   function selectFile(f: File | null) {
     if (!f) {
@@ -34,37 +34,44 @@ export default function HeroManager() {
   }
 
   // ======================================================
-  // UPLOAD FILE TO STORAGE + SAVE TO DB
+  // UPLOAD     *** FIXED DOUBLE-TAP HERE ***
   // ======================================================
   async function upload() {
-    if (!file) return;
+    if (loading) return; // <<<<<< FIXED: prevents double insert
+    if (!file) {
+      alert("Please select a file first!");
+      return;
+    }
 
     setLoading(true);
 
     try {
       const filename = `${Date.now()}-${file.name}`;
 
-      // Upload to Supabase Storage
+      // Upload to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("hero")
         .upload(filename, file);
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from("hero").getPublicUrl(filename);
 
-      // Insert into DB
-      const { data: insertData, error: insertError } = await supabase
+      if (!publicUrl || publicUrl.trim() === "") {
+        throw new Error("Upload succeeded but public URL is empty!");
+      }
+
+      // Insert DB record
+      const { error: insertError } = await supabase
         .from("hero_images")
-        .insert([{ image: publicUrl }])
-        .select("*");
+        .insert([{ image: publicUrl }]);
 
       if (insertError) throw insertError;
 
-      // Reset UI
+      // Reset
       setFile(null);
       setPreviewUrl(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -117,7 +124,7 @@ export default function HeroManager() {
   }
 
   // ======================================================
-  // REORDER IMAGES
+  // REORDER
   // ======================================================
   async function move(index: number, direction: "up" | "down") {
     const current = heroImages;
@@ -141,14 +148,18 @@ export default function HeroManager() {
     }
   }
 
-  // Drag-and-drop handlers
+  // ======================================================
+  // DRAG & DROP
+  // ======================================================
   function onDragStart(e: React.DragEvent, idx: number) {
     setDragIndex(idx);
     e.dataTransfer.effectAllowed = "move";
   }
+
   function onDragOver(e: React.DragEvent) {
     e.preventDefault();
   }
+
   async function onDrop(e: React.DragEvent, idx: number) {
     e.preventDefault();
     if (dragIndex === null || dragIndex === idx) return;
@@ -167,18 +178,22 @@ export default function HeroManager() {
       {/* FILE INPUT */}
       <div className="flex gap-2 items-center">
         <input
-          key="hero-upload"   // prevents React resetting file input
+          key="hero-upload"
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          // FIXED: removed disabled={loading}
           onChange={(e) => selectFile(e.target.files?.[0] || null)}
         />
 
         <button
-          className="bg-blue-600 text-white px-3 py-1 rounded"
+          className="bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-2"
           onClick={upload}
           disabled={loading || !file}
         >
+          {loading && (
+            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          )}
           {loading ? "Uploading..." : "Upload"}
         </button>
       </div>
@@ -222,7 +237,7 @@ export default function HeroManager() {
                   <button
                     className="px-2 py-1 bg-gray-200 rounded"
                     onClick={() => move(idx, "up")}
-                    disabled={idx === 0}
+                    disabled={idx === 0 || loading}
                   >
                     ↑
                   </button>
@@ -230,7 +245,7 @@ export default function HeroManager() {
                   <button
                     className="px-2 py-1 bg-gray-200 rounded"
                     onClick={() => move(idx, "down")}
-                    disabled={idx === heroImages.length - 1}
+                    disabled={idx === heroImages.length - 1 || loading}
                   >
                     ↓
                   </button>
@@ -238,6 +253,7 @@ export default function HeroManager() {
                   <button
                     className="px-2 py-1 bg-red-500 text-white rounded"
                     onClick={() => removeImage(h.id, h.image)}
+                    disabled={loading}
                   >
                     Delete
                   </button>
