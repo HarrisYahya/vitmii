@@ -20,22 +20,17 @@ export default function ProductGrid() {
   }, []);
 
   return (
-    <section className="
-      px-4 
-      pb-10 
-      grid 
-      grid-cols-3       /* MOBILE */
-      md:grid-cols-4    /* TABLET */
-      lg:grid-cols-6    /* DESKTOP */
-      gap-3             /* SMALL GAP */
-    ">
+    <section className="px-8 pb-10 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
       {products.map((p) => (
         <Card
           key={p.id}
-          className="shadow-md rounded-xl overflow-hidden border h-[200px] w-full flex flex-col"
+          className="shadow-md rounded-xl overflow-hidden border h-[200px] w-[140px] flex flex-col"
         >
           <CardContent className="p-0 flex flex-col flex-1">
-            <img src={p.image} className="w-full h-20 object-cover" />
+            <img
+              src={p.image}
+              className="w-full h-20 object-cover"
+            />
 
             <div className="px-3 py-2 flex flex-col flex-1 items-center text-center justify-between">
               <div>
