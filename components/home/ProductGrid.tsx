@@ -5,9 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getProducts } from "@/lib/products";
 import { useCart } from "@/lib/cart-store";
+import type { Product } from "@/lib/types";
 
 export default function ProductGrid() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -19,22 +20,39 @@ export default function ProductGrid() {
   }, []);
 
   return (
-    <section className="px-8 pb-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+    <section className="
+      px-4 
+      pb-10 
+      grid 
+      grid-cols-3       /* MOBILE */
+      md:grid-cols-4    /* TABLET */
+      lg:grid-cols-6    /* DESKTOP */
+      gap-3             /* SMALL GAP */
+    ">
       {products.map((p) => (
-        <Card key={p.id} className="shadow-md rounded-xl overflow-hidden">
-          <CardContent className="p-0">
-            <img src={p.image} className="w-full h-32 object-cover" />
-            <div className="p-4 flex flex-col items-center text-center">
-              <h3 className="font-medium">{p.name}</h3>
-              <p className="text-gray-600 text-sm">${p.price} {p.unit}</p>
+        <Card
+          key={p.id}
+          className="shadow-md rounded-xl overflow-hidden border h-[200px] w-full flex flex-col"
+        >
+          <CardContent className="p-0 flex flex-col flex-1">
+            <img src={p.image} className="w-full h-20 object-cover" />
+
+            <div className="px-3 py-2 flex flex-col flex-1 items-center text-center justify-between">
+              <div>
+                <h3 className="font-medium text-sm leading-tight truncate">
+                  {p.name}
+                </h3>
+                <p className="text-gray-600 text-xs mt-1">
+                  ${p.price} {p.unit}
+                </p>
+              </div>
 
               <Button
-                className="mt-3 w-full bg-blue-600 text-white hover:bg-blue-700"
+                className="w-full bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 mt-2"
                 onClick={() => addItem(p)}
               >
                 Add Cart
               </Button>
-
             </div>
           </CardContent>
         </Card>

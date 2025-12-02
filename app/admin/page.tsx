@@ -5,7 +5,7 @@ import { AdminProvider } from "@/context/AdminContext";
 import ProductManager from "@/components/admin/ProductManager";
 import CategoryManager from "@/components/admin/CategoryManager";
 import OrdersManager from "@/components/admin/OrdersManager";
-
+import HeroManager from "@/components/admin/HeroManager";
 export default function AdminPage() {
   return (
     <AdminProvider>
@@ -14,7 +14,9 @@ export default function AdminPage() {
 
         <CategoryManager />
         <ProductManager />
+        <HeroManager/>
         <OrdersManager />
+        
       </div>
     </AdminProvider>
   );
