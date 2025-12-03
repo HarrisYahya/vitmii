@@ -1,3 +1,4 @@
+//component admin/CategoryManager.tsx
 "use client";
 
 import { useAdmin } from "@/context/AdminContext";

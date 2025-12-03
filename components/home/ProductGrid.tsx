@@ -7,35 +7,41 @@ import { getProducts } from "@/lib/products";
 import { useCart } from "@/lib/cart-store";
 import type { Product } from "@/lib/types";
 
-export default function ProductGrid() {
+export default function ProductGrid({ categoryId = null }: { categoryId: string | null }) {
   const [products, setProducts] = useState<Product[]>([]);
   const { addItem } = useCart();
 
   useEffect(() => {
     async function load() {
-      const data = await getProducts();
+      let data = await getProducts();
+
+      if (categoryId) {
+        data = data.filter((p) => p.category === categoryId);
+      }
+
       setProducts(data);
     }
     load();
-  }, []);
+  }, [categoryId]);
 
   return (
-    <section className="
-      px-4 
-      pb-10 
-      grid 
-      grid-cols-3       /* MOBILE */
-      md:grid-cols-4    /* TABLET */
-      lg:grid-cols-6    /* DESKTOP */
-      gap-3             /* SMALL GAP */
-    ">
-      {products.map((p) => (
+    <section
+      className="
+        px-4 pb-10 
+        grid 
+        grid-cols-3
+        md:grid-cols-4
+        lg:grid-cols-6
+        gap-3
+      "
+    >
+      {products.map((p: Product) => (
         <Card
           key={p.id}
           className="shadow-md rounded-xl overflow-hidden border h-[200px] w-full flex flex-col"
         >
           <CardContent className="p-0 flex flex-col flex-1">
-            <img src={p.image} className="w-full h-20 object-cover" />
+            <img src={p.image || ""} className="w-full h-20 object-cover" />
 
             <div className="px-3 py-2 flex flex-col flex-1 items-center text-center justify-between">
               <div>

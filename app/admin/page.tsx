@@ -14,7 +14,6 @@ export default function AdminPage() {
 
         <CategoryManager />
         <ProductManager />
-        <HeroManager/>
         <OrdersManager />
         
       </div>

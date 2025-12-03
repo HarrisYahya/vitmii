@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import useEmblaCarousel from "embla-carousel-react";
 
@@ -10,75 +10,54 @@ type Category = {
   image: string | null;
 };
 
-export default function Categories() {
+type Props = {
+  onSelect: (id: string | null) => void;
+};
+
+export default function Categories({ onSelect }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
-
-  async function loadCategories() {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .order("id", { ascending: true });
-
-    if (!error) setCategories(data || []);
-  }
+  const [emblaRef] = useEmblaCarousel({ loop: false, align: "start" });
 
   useEffect(() => {
-    loadCategories();
+    async function load() {
+      const { data } = await supabase.from("categories").select("*");
+      setCategories(data || []);
+    }
+    load();
   }, []);
 
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
-  }, [emblaApi]);
-
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
-
   return (
-    <div className="w-full py-6 px-4">
-      {/* Header with buttons */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Categories</h2>
-
-        <div className="flex gap-2">
-          {/* <button
-            onClick={scrollPrev}
-            className="px-3 py-1 rounded bg-gray-200 text-sm"
-          >
-            Prev
-          </button>
-          <button
-            onClick={scrollNext}
-            className="px-3 py-1 rounded bg-gray-200 text-sm"
-          >
-            Next
-          </button> */}
-        </div>
-      </div>
-
-      {/* Carousel wrapper */}
+    <div className="w-full px-4 py-4">
       <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex gap-4">
-          {categories.map((cat) => (
-            <div
-              key={cat.id}
-              className="
-                flex-none 
-                w-[110px] 
-                border rounded-xl p-3 
-                flex flex-col items-center text-center 
-                bg-white shadow-sm
-              "
+        <div className="flex gap-3">
+
+          {/* ALL */}
+          <button
+            onClick={() => onSelect(null)}
+            className="min-w-[90px] flex flex-col items-center p-2 bg-gray-100 rounded-xl"
+          >
+            <div className="w-16 h-16 bg-gray-300 rounded-lg flex items-center justify-center">
+              <span className="text-sm font-bold">All</span>
+            </div>
+            <span className="text-sm mt-1">All</span>
+          </button>
+
+          {/* Categories */}
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => onSelect(c.id)}
+              className="min-w-[90px] flex flex-col items-center p-2 bg-gray-100 rounded-xl"
             >
               <img
-                src={cat.image || "/images/placeholder.png"}
-                alt={cat.name}
-                className="h-14 w-14 object-cover rounded mb-2"
+                src={c.image || "/placeholder.png"}
+                alt={c.name}
+                className="w-16 h-16 object-cover rounded-lg"
               />
-              <p className="font-medium text-sm">{cat.name}</p>
-            </div>
+              <span className="text-sm mt-1">{c.name}</span>
+            </button>
           ))}
+
         </div>
       </div>
     </div>
