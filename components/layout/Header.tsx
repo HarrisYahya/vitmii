@@ -84,8 +84,8 @@ export default function Header() {
           </Link>
         )}
 
-        {/* ✅ Auth Button */}
-        {!user ? (
+        {/* ✅ Auth Button 
+          {!user ? (
           <Link href="/login" className="text-sm bg-white text-green-900 px-3 py-1 rounded">
             Login
           </Link>
@@ -95,7 +95,7 @@ export default function Header() {
             className="text-sm bg-red-500 px-3 py-1 rounded"
           >
             Logout
-          </button>
+          </button> */}
         )}
       </div>
     </header>
