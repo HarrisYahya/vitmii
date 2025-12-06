@@ -2,7 +2,10 @@
 export type Product = {
   id: number;
   name: string;
-  price: number; // numeric price for arithmetic
+  price: number;
   unit: string;
   image: string;
+
+  // ✅ YOUR REAL DB COLUMN (NOT category_id)
+  category: string | null;
 };

@@ -15,6 +15,7 @@ export default function ProductGrid({ categoryId = null }: { categoryId: string 
     async function load() {
       let data = await getProducts();
 
+      // ✅ ✅ ✅ FINAL WORKING FILTER USING YOUR REAL COLUMN
       if (categoryId) {
         data = data.filter((p) => p.category === categoryId);
       }
@@ -41,7 +42,10 @@ export default function ProductGrid({ categoryId = null }: { categoryId: string 
           className="shadow-md rounded-xl overflow-hidden border h-[200px] w-full flex flex-col"
         >
           <CardContent className="p-0 flex flex-col flex-1">
-            <img src={p.image || ""} className="w-full h-20 object-cover" />
+
+            {p.image && (
+              <img src={p.image} className="w-full h-20 object-cover" />
+            )}
 
             <div className="px-3 py-2 flex flex-col flex-1 items-center text-center justify-between">
               <div>

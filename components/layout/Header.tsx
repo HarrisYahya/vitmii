@@ -55,9 +55,20 @@ export default function Header() {
     <header className="w-full bg-green-900 text-white flex items-center justify-between px-6 py-3 shadow fixed top-0 left-0 z-50">
       
       {/* Brand */}
-      <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-        <span className="text-yellow-400">🐝</span> vitimiin online
-      </Link>
+       {/* Brand */}
+<Link
+  href="/"
+  className="flex items-center gap-2 font-semibold tracking-wide"
+>
+  <img
+    src="/images/logo.jpg"
+    alt="Vitimiin Online Logo"
+    className="h-8 w-8 object-contain rounded-full border border-white"
+  />
+  <span className="whitespace-nowrap">vitimiin online</span>
+</Link>
+
+
 
       {/* Actions */}
       <div className="flex items-center gap-5">

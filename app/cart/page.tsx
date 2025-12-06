@@ -1,91 +1,74 @@
- "use client";
+"use client";
 
 import Header from "@/components/layout/Header";
 import { useCart } from "@/lib/cart-store";
-import Image from "next/image";
+import SafeImage from "@/components/SafeImage";
 import { Minus, Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const { items, increaseQty, decreaseQty, removeItem } = useCart();
+  const router = useRouter();
 
   const total = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  // ✅ WhatsApp checkout function (ADDED ONLY THIS)
-  function sendToWhatsApp() {
+  function goToCheckout() {
     if (items.length === 0) return;
-
-    const phone = "252617733690";
-
-    const message = items
-      .map(
-        (item) =>
-          `• ${item.name} x ${item.quantity} = $${(
-            item.price * item.quantity
-          ).toFixed(2)}`
-      )
-      .join("%0A");
-
-    const totalFormatted = total.toFixed(2);
-
-    const finalMessage =
-      `NEW ORDER:%0A-----------------%0A${message}%0A-----------------%0ATotal: $${totalFormatted}`;
-
-    const url = `https://wa.me/${phone}?text=${finalMessage}`;
-
-    window.open(url, "_blank");
+    router.push("/checkout");
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-900">
       <Header />
 
-      <div className="p-6 max-w-3xl mx-auto">
-        <h1 className="text-3xl font-semibold mb-6">Your Cart</h1>
+      <div className="p-6 max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
 
         {items.length === 0 ? (
-          <p className="text-lg text-neutral-600 dark:text-neutral-300">
+          <div className="text-center py-20 text-neutral-500 text-lg">
             Your cart is empty.
-          </p>
+          </div>
         ) : (
           <>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-4 p-4 border rounded-2xl bg-white dark:bg-neutral-800 shadow-md"
+                  className="flex items-center gap-5 p-5 border rounded-2xl bg-white dark:bg-neutral-800 shadow-sm"
                 >
                   {item.image && (
-                    <Image
+                    <SafeImage
                       src={item.image}
-                      width={80}
-                      height={80}
+                      width={90}
+                      height={90}
                       alt={item.name}
-                      className="rounded-xl object-cover"
                     />
                   )}
 
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{item.name}</h3>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                    <p className="text-sm text-neutral-500">
                       ${item.price} / {item.unit}
                     </p>
 
-                    <div className="flex items-center mt-3 gap-3">
+                    <div className="flex items-center mt-4 gap-4">
                       <button
                         onClick={() => decreaseQty(item.id)}
-                        className="p-2 rounded-full border bg-neutral-100 dark:bg-neutral-700"
+                        className="p-2 rounded-full border bg-neutral-100 hover:bg-neutral-200"
                       >
                         <Minus size={16} />
                       </button>
 
-                      <span className="font-semibold">{item.quantity}</span>
+                      <span className="font-semibold text-lg">
+                        {item.quantity}
+                      </span>
 
                       <button
                         onClick={() => increaseQty(item.id)}
-                        className="p-2 rounded-full border bg-neutral-100 dark:bg-neutral-700"
+                        className="p-2 rounded-full border bg-neutral-100 hover:bg-neutral-200"
                       >
                         <Plus size={16} />
                       </button>
@@ -93,13 +76,13 @@ export default function CartPage() {
                   </div>
 
                   <div className="text-right">
-                    <p className="font-semibold text-lg">
+                    <p className="font-bold text-lg">
                       ${(item.price * item.quantity).toFixed(2)}
                     </p>
 
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="mt-2 p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded-full"
+                      className="mt-3 p-2 text-red-500 hover:bg-red-100 rounded-full"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -108,18 +91,17 @@ export default function CartPage() {
               ))}
             </div>
 
-            <div className="mt-6 p-4 rounded-2xl bg-white dark:bg-neutral-800 border shadow-md">
-              <div className="flex justify-between text-lg font-semibold">
+            <div className="mt-10 p-6 rounded-2xl bg-white dark:bg-neutral-800 border shadow-sm">
+              <div className="flex justify-between text-xl font-bold">
                 <span>Total:</span>
                 <span>${total.toFixed(2)}</span>
               </div>
 
-              {/* ✅ Checkout button now sends WhatsApp message */}
               <button
-                onClick={sendToWhatsApp}
-                className="w-full mt-4 bg-green-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-green-700 transition"
+                onClick={goToCheckout}
+                className="w-full mt-5 bg-green-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-700 transition"
               >
-                Checkout
+                Proceed to Checkout
               </button>
             </div>
           </>

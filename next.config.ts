@@ -1,4 +1,4 @@
-// next.config.ts
+ // next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -14,10 +14,16 @@ const nextConfig: NextConfig = {
         hostname: "*.bing.com",
       },
 
-      // Supabase public storage
+      // Supabase public storage ✅ FIXED (no https:// here)
       {
         protocol: "https",
-        hostname: "https://gigmjuxmlxzmgexionot.supabase.co",
+        hostname: "gigmjuxmlxzmgexionot.supabase.co",
+      },
+
+      // Adeeg images ✅ ADDED (your cart error fix)
+      {
+        protocol: "https",
+        hostname: "adeeg.com",
       },
     ],
   },

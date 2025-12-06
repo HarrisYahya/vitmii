@@ -10,44 +10,53 @@ export async function middleware(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name) {
-          return req.cookies.get(name)?.value;
+        get: (name) => req.cookies.get(name)?.value,
+
+        set: (name, value, options) => {
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+          });
         },
-        set(name, value, options) {
-          res.cookies.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          res.cookies.set({ name, value: "", ...options });
+
+        remove: (name, options) => {
+          res.cookies.set({
+            name,
+            value: "",
+            ...options,
+            maxAge: 0,
+          });
         },
       },
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
+  const user = data?.user;
 
   // ✅ Protect ALL admin routes
   if (req.nextUrl.pathname.startsWith("/admin")) {
-    // ✅ Login page always allowed
+    // ✅ Allow admin login always
     if (req.nextUrl.pathname === "/admin/login") {
       return res;
     }
 
-    // ✅ Block if NOT logged in
-    if (!user) {
+    // ❌ NOT LOGGED IN → BLOCK
+    if (!user || error) {
       return NextResponse.redirect(new URL("/admin/login", req.url));
     }
 
-    // ✅ Check if user is an ADMIN (SQL check)
-    const { data: admin } = await supabase
+    // ✅ HARD ADMIN CHECK (admins table)
+    const { data: admin, error: adminError } = await supabase
       .from("admins")
       .select("id")
       .eq("id", user.id)
       .single();
 
-    if (!admin) {
-      return NextResponse.redirect(new URL("/", req.url)); // ❌ Not an admin → Kick out
+    // ❌ NOT ADMIN → BLOCK
+    if (!admin || adminError) {
+      return NextResponse.redirect(new URL("/", req.url));
     }
   }
 

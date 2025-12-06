@@ -1,7 +1,9 @@
- // app/admin/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+
 import { AdminProvider } from "@/context/AdminContext";
 import ProductManager from "@/components/admin/ProductManager";
 import CategoryManager from "@/components/admin/CategoryManager";
@@ -9,9 +11,49 @@ import OrdersManager from "@/components/admin/OrdersManager";
 import HeroManager from "@/components/admin/HeroManager";
 
 export default function AdminPage() {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
   const [active, setActive] = useState<
     "categories" | "products" | "orders" | "hero"
   >("categories");
+
+  // ✅ CLIENT-SIDE ADMIN VERIFICATION (BACKUP TO MIDDLEWARE)
+  useEffect(() => {
+    async function verifyAdmin() {
+      const { data, error } = await supabase.auth.getUser();
+      const user = data?.user;
+
+      if (!user || error) {
+        router.replace("/admin/login");
+        return;
+      }
+
+      const { data: admin, error: adminError } = await supabase
+        .from("admins")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      if (!admin || adminError) {
+        router.replace("/");
+        return;
+      }
+
+      setChecking(false);
+    }
+
+    verifyAdmin();
+  }, [router]);
+
+  // ✅ Loading Shield (prevents UI flashing)
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-xl font-semibold">
+        Securing Admin Dashboard...
+      </div>
+    );
+  }
 
   return (
     <AdminProvider>
@@ -66,7 +108,6 @@ export default function AdminPage() {
           {active === "products" && <ProductManager />}
           {active === "orders" && <OrdersManager />}
           {active === "hero" && <HeroManager />}
-
         </main>
       </div>
     </AdminProvider>

@@ -28,12 +28,17 @@ export type HeroImage = {
   created_at?: string | null;
 };
 
-export type Order = {
+ type Order = {
   id: string;
-  items: any[];
   total_price: number;
   created_at: string;
+  items: any[];
+
+  // ✅ ADD THESE:
+  customer_phone: string | null;
+  district: string | null;
 };
+
 
 type AdminContextType = {
   products: Product[];
