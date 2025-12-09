@@ -74,7 +74,7 @@ export default function CheckoutPage() {
         )
         .join("%0A");
 
-      // ✅ iPhone-safe WhatsApp message (ONLY PART FIXED)
+      // FIXED WhatsApp message for iPhone (no broken lines)
       const finalMessage =
         `🛒 *Waxaan Rabaa Adeegaas*%0A` +
         `——————————————%0A` +
@@ -84,10 +84,8 @@ export default function CheckoutPage() {
         `💰 *Total:* $${total.toFixed(2)}%0A` +
         `📩 Waxan rabaa in lacagta ku soo diro 617733690`;
 
-      window.open(
-        `https://wa.me/252617733690?text=${finalMessage}`,
-        "_blank"
-      );
+      // ONLY CHANGE → iPhone-safe redirect (NO POPUP)
+      window.location.href = `https://wa.me/252617733690?text=${finalMessage}`;
 
       clearCart();
       setPhone("");
