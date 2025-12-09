@@ -14,7 +14,6 @@ const districts = [
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
 
-  // ✅ hydration fix
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -24,7 +23,7 @@ export default function CheckoutPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  if (!mounted) return null; // ✅ prevents invisible render bug
+  if (!mounted) return null;
 
   const total = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -75,10 +74,15 @@ export default function CheckoutPage() {
         )
         .join("%0A");
 
+      // ✅ iPhone-safe WhatsApp message (ONLY PART FIXED)
       const finalMessage =
-        `NEW ORDER:%0A${message}%0A%0ATotal: $${total.toFixed(
-          2
-        )}%0APhone: ${phone}%0ADistrict: ${district}`;
+        `🛒 *Waxaan Rabaa Adeegaas*%0A` +
+        `——————————————%0A` +
+        `📍 *Degmada:* ${district}%0A` +
+        `📞 *Phone:* ${phone}%0A%0A` +
+        `*Items:*%0A${message}%0A%0A` +
+        `💰 *Total:* $${total.toFixed(2)}%0A` +
+        `📩 Waxan rabaa in lacagta ku soo diro 617733690`;
 
       window.open(
         `https://wa.me/252617733690?text=${finalMessage}`,
@@ -96,22 +100,23 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-900 py-10 px-4">
-      <div className="max-w-3xl mx-auto p-6 bg-white dark:bg-neutral-800 rounded-2xl shadow-md border">
+    <div className="min-h-screen bg-white dark:bg-neutral-900 pb-10">
 
-        {/* ✅ TITLE VISIBILITY FIX */}
-        <h1 className="text-3xl font-bold mb-8 text-center text-black dark:text-white">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-50 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border-b p-4">
+        <h1 className="text-2xl font-bold text-center text-black dark:text-white">
           Checkout
         </h1>
+      </div>
 
-        {/* ✅ EMPTY CART VISIBILITY FIX */}
+      <div className="max-w-3xl mx-auto p-6 rounded-2xl shadow-md border mt-6 bg-white dark:bg-neutral-800">
+
         {items.length === 0 ? (
           <p className="text-center text-lg text-gray-600 dark:text-gray-300">
             Your cart is empty.
           </p>
         ) : (
           <>
-            {/* ✅ CUSTOMER INFO FORM */}
             {!infoSubmitted && (
               <div className="space-y-4 mb-8">
                 <input
@@ -139,7 +144,6 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ✅ SUBMITTED INFO */}
             {infoSubmitted && (
               <div className="mb-6 p-5 rounded-xl border bg-gray-50 dark:bg-neutral-900 text-black dark:text-white">
                 <p><b>Phone:</b> {phone}</p>
@@ -158,7 +162,6 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ✅ ORDER ITEMS */}
             <div className="space-y-3">
               {items.map((item) => (
                 <div
@@ -175,7 +178,6 @@ export default function CheckoutPage() {
               ))}
             </div>
 
-            {/* ✅ TOTAL */}
             <div className="mt-6 p-4 rounded-xl bg-gray-100 dark:bg-neutral-900 text-xl font-bold flex justify-between text-black dark:text-white">
               <span>Total:</span>
               <span>${total.toFixed(2)}</span>
@@ -183,7 +185,6 @@ export default function CheckoutPage() {
           </>
         )}
 
-        {/* ✅ CONFIRMATION MODAL */}
         {showConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-xl w-full max-w-md space-y-4 text-black dark:text-white">

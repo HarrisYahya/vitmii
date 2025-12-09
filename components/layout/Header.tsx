@@ -107,7 +107,6 @@ export default function Header() {
           >
             Logout
           </button> */}
-       
       </div>
     </header>
   );
