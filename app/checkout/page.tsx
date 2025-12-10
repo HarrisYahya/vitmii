@@ -120,7 +120,7 @@ export default function CheckoutPage() {
         `*Items:*%0A${message}%0A%0A` +
         `🚚 *Delivery Fee:* $${deliveryFee.toFixed(2)}%0A` +
         `💰 *Total:* $${total.toFixed(2)}%0A` +
-        `📩 Waxan rabaa in lacagta ku soo diro 617733690`;
+        `📩 Macamiil lacagta ku so dir 617733690`;
 
       // iPhone-safe redirect
       window.location.href = `https://wa.me/252617733690?text=${finalMessage}`;
