@@ -6,18 +6,14 @@ export async function POST(req: Request) {
     const { phone, total, district, delivery, deliveryFee, items } = body;
 
     if (!phone || !total) {
-      return NextResponse.json(
-        { status: "ERROR", message: "Missing phone or total" },
-        { status: 400 }
-      );
+      return NextResponse.json({ status: "ERROR", message: "Missing phone or total" }, { status: 400 });
     }
 
-    // Check env variables
     const { HORMUUD_MERCHANT_UID, HORMUUD_API_USER, HORMUUD_TOKEN } = process.env;
+
     if (!HORMUUD_MERCHANT_UID || !HORMUUD_API_USER || !HORMUUD_TOKEN) {
-      console.error("Hormuud credentials missing in environment variables!");
       return NextResponse.json(
-        { status: "ERROR", message: "Server misconfiguration" },
+        { status: "ERROR", message: "Server misconfigured. Please contact admin." },
         { status: 500 }
       );
     }
@@ -32,9 +28,7 @@ export async function POST(req: Request) {
         merchantUid: HORMUUD_MERCHANT_UID,
         apiUserId: HORMUUD_API_USER,
         amount: total,
-        payerInfo: {
-          accountNo: phone,
-        },
+        payerInfo: { accountNo: phone },
         description: `Order (${district})`,
       },
     };
@@ -50,21 +44,25 @@ export async function POST(req: Request) {
 
     if (!response.ok) {
       const text = await response.text();
-      console.error("Hormuud API error:", response.status, text);
       return NextResponse.json(
-        { status: "ERROR", message: `Hormuud API failed: ${response.status}` },
+        { status: "ERROR", message: `Payment failed: ${text}` },
         { status: 500 }
       );
     }
 
     const data = await response.json();
+
+    if (!data || data.status !== "SUCCESS") {
+      return NextResponse.json(
+        { status: "ERROR", message: data?.message || "Payment failed. Try again." },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ status: "SUCCESS", hormuud: data });
 
-  } catch (error) {
-    console.error("Hormuud API exception:", error);
-    return NextResponse.json(
-      { status: "ERROR", message: (error as Error).message || "Server error" },
-      { status: 500 }
-    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ status: "ERROR", message: `Server error: ${msg}` }, { status: 500 });
   }
 }
