@@ -13,30 +13,29 @@ const districts = [
 
 // DELIVERY FEES BY DISTRICT
 const deliveryPrices: Record<string, number> = {
-  "Abdiaziz": 2,
-  "Bondhere": 1.5,
-  "Daynile": 1.5,
-  "Dharkenley": 1.5,
+  Abdiaziz: 2,
+  Bondhere: 1.5,
+  Daynile: 1.5,
+  Dharkenley: 1.5,
   "Hamar Jajab": 1.5,
   "Hamar Weyne": 1.5,
-  "Hodan": 2,
-  "Howlwadaag": 1,
-  "Kahda": 1.5,
-  "Karaan": 2,
-  "Shangani": 2,
-  "Shibis": 2,
-  "Waberi": 1,
-  "Wadajir": 1.5,
-  "Wardhiigley": 1.5,
-  "Yaqshid": 2,
-  "Huriwaa": 2,
-  "Heliwaa": 2,
+  Hodan: 2,
+  Howlwadaag: 1,
+  Kahda: 1.5,
+  Karaan: 2,
+  Shangani: 2,
+  Shibis: 2,
+  Waberi: 1,
+  Wadajir: 1.5,
+  Wardhiigley: 1.5,
+  Yaqshid: 2,
+  Huriwaa: 2,
+  Heliwaa: 2,
 };
 
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const [phone, setPhone] = useState("");
   const [district, setDistrict] = useState("");
@@ -45,6 +44,7 @@ export default function CheckoutPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
   // SUBTOTAL
@@ -54,9 +54,9 @@ export default function CheckoutPage() {
   );
 
   // DELIVERY FEE
-  const deliveryFee = delivery ? (deliveryPrices[district] || 0) : 0;
+  const deliveryFee = delivery ? deliveryPrices[district] || 0 : 0;
 
-  // FINAL TOTAL
+  // TOTAL
   const total = subtotal + deliveryFee;
 
   function submitCustomerInfo() {
@@ -70,7 +70,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // DELIVERY MINIMUM CHECK
     if (delivery && subtotal < 5) {
       alert("Delivery requires a minimum order of $5.");
       return;
@@ -91,46 +90,66 @@ export default function CheckoutPage() {
         qty: item.quantity,
       }));
 
-      await supabase.from("orders").insert([
+      // ✅ SAVE ORDER TO SUPABASE
+      const { data, error } = await supabase.from("orders").insert([
         {
           total_price: total,
           customer_phone: phone,
           district,
           delivery,
           delivery_fee: deliveryFee,
-          items: formattedItems,
+          items: formattedItems, // send as array, NOT JSON.stringify
         },
       ]);
 
-      const message = formattedItems
-        .map(
-          (item) =>
-            `• ${item.title} × ${item.qty} = $${(
-              item.price * item.qty
-            ).toFixed(2)}`
-        )
-        .join("%0A");
+      if (error) {
+        console.error("Supabase insert error:", error);
+        alert("Failed to save order. Please try again.");
+        return;
+      }
 
-      const finalMessage =
-        `🛒 *Waxaan Rabaa Adeegaas*%0A` +
-        `——————————————%0A` +
-        `🚚 *Delivery:* ${delivery ? "Haa" : "Maya"}%0A` +
-        `📍 *Degmada:* ${district}%0A` +
-        `📞 *Phone:* ${phone}%0A%0A` +
-        `*Items:*%0A${message}%0A%0A` +
-        `🚚 *Delivery Fee:* $${deliveryFee.toFixed(2)}%0A` +
-        `💰 *Total:* $${total.toFixed(2)}%0A` +
-        `📩 Macamiil lacagta ku so dir 617733690`;
+      // ✅ CALL HORMUUD API
+      const res = await fetch("/api/hormuud/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone,
+          total,
+          district,
+          delivery,
+          deliveryFee,
+          items: formattedItems,
+        }),
+      });
 
-      // iPhone-safe redirect
-      window.location.href = `https://wa.me/252617733690?text=${finalMessage}`;
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Hormuud API failed:", res.status, text);
+        alert("Payment failed. Please try again.");
+        return;
+      }
 
+      const dataHormuud = await res.json();
+
+      if (dataHormuud.status !== "SUCCESS") {
+        alert("Payment failed. Please try again.");
+        console.error("Hormuud response error:", dataHormuud);
+        return;
+      }
+
+      alert("Payment successful ✔");
+
+      // CLEAR CART
       clearCart();
       setPhone("");
       setDistrict("");
       setDelivery(false);
       setInfoSubmitted(false);
       setShowConfirm(false);
+
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -175,7 +194,6 @@ export default function CheckoutPage() {
                   ))}
                 </select>
 
-                {/* DELIVERY TOGGLE */}
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -219,12 +237,8 @@ export default function CheckoutPage() {
                   key={item.id}
                   className="flex justify-between p-3 border rounded-lg bg-white dark:bg-neutral-900 text-black dark:text-white"
                 >
-                  <span>
-                    {item.name} × {item.quantity}
-                  </span>
-                  <span>
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </span>
+                  <span>{item.name} × {item.quantity}</span>
+                  <span>${(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -265,7 +279,7 @@ export default function CheckoutPage() {
                   disabled={loading}
                   onClick={confirmOrderAndSend}
                 >
-                  {loading ? "Processing..." : "Confirm & WhatsApp"}
+                  {loading ? "Processing..." : "Confirm & Pay"}
                 </Button>
 
                 <Button
