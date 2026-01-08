@@ -1,4 +1,3 @@
-// vitmii/app/api/hormuud/confirm.ts
 import { NextResponse } from "next/server";
 
 interface RequestBody {
@@ -20,6 +19,7 @@ export async function POST(req: Request) {
     const body: RequestBody = await req.json();
     const { phone, total, district } = body;
 
+    // ✅ Basic validation (unchanged behavior)
     if (!phone || !total) {
       return NextResponse.json(
         { status: "ERROR", message: "Missing phone or total" },
@@ -27,16 +27,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const { HORMUUD_MERCHANT_UID, HORMUUD_API_USER, HORMUUD_TOKEN } = process.env;
+    // ✅ Load Hormuud credentials
+    const {
+      HORMUUD_MERCHANT_UID,
+      HORMUUD_API_USER,
+      HORMUUD_TOKEN,
+    } = process.env;
 
     if (!HORMUUD_MERCHANT_UID || !HORMUUD_API_USER || !HORMUUD_TOKEN) {
-      console.error("Hormuud credentials missing!");
+      console.error("Hormuud credentials missing");
       return NextResponse.json(
         { status: "ERROR", message: "Server misconfiguration" },
         { status: 500 }
       );
     }
 
+    // ✅ REAL Hormuud payload (official structure)
     const payload = {
       schemaVersion: "1.0",
       requestId: Date.now().toString(),
@@ -54,6 +60,7 @@ export async function POST(req: Request) {
       },
     };
 
+    // ✅ REAL Hormuud API call (production)
     const response = await fetch(
       "https://api.hormuud.com/evcplus/payment",
       {
@@ -67,16 +74,21 @@ export async function POST(req: Request) {
     );
 
     if (!response.ok) {
-      const text = await response.text();
-      console.error("Hormuud API error:", response.status, text);
+      const errorText = await response.text();
+      console.error("Hormuud API error:", response.status, errorText);
       return NextResponse.json(
-        { status: "ERROR", message: "Hormuud API failed" },
+        { status: "ERROR", message: "Hormuud payment failed" },
         { status: 500 }
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json({ status: "SUCCESS", hormuud: data });
+    const hormuudResponse = await response.json();
+
+    // ✅ Success response (frontend already handles this)
+    return NextResponse.json({
+      status: "SUCCESS",
+      hormuud: hormuudResponse,
+    });
 
   } catch (error) {
     console.error("Hormuud API exception:", error);
