@@ -44,37 +44,30 @@ export default function CheckoutPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ New: Toast states
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
-  // SUBTOTAL
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  // DELIVERY FEE
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const deliveryFee = delivery ? deliveryPrices[district] || 0 : 0;
-
-  // TOTAL
   const total = subtotal + deliveryFee;
 
   function submitCustomerInfo() {
     if (!phone || !district) {
-      alert("Please enter phone and district.");
+      setErrorMessage("Please enter phone and district.");
       return;
     }
-
     if (items.length === 0) {
-      alert("Your cart is empty.");
+      setErrorMessage("Your cart is empty.");
       return;
     }
-
     if (delivery && subtotal < 5) {
-      alert("Delivery requires a minimum order of $5.");
+      setErrorMessage("Delivery requires a minimum order of $5.");
       return;
     }
-
     setInfoSubmitted(true);
     setShowConfirm(true);
   }
@@ -82,7 +75,6 @@ export default function CheckoutPage() {
   async function confirmOrderAndSend() {
     try {
       setLoading(true);
-
       const formattedItems = items.map((item) => ({
         id: item.id,
         title: item.name,
@@ -98,13 +90,12 @@ export default function CheckoutPage() {
           district,
           delivery,
           delivery_fee: deliveryFee,
-          items: formattedItems, // send as array, NOT JSON.stringify
+          items: formattedItems,
         },
       ]);
 
       if (error) {
-        console.error("Supabase insert error:", error);
-        alert("Failed to save order. Please try again.");
+        setErrorMessage("Failed to save order. Please try again.");
         return;
       }
 
@@ -125,19 +116,20 @@ export default function CheckoutPage() {
       if (!res.ok) {
         const text = await res.text();
         console.error("Hormuud API failed:", res.status, text);
-        alert("Payment failed. Please try again.");
+        setErrorMessage("Payment failed. Please try again.");
         return;
       }
 
       const dataHormuud = await res.json();
 
       if (dataHormuud.status !== "SUCCESS") {
-        alert("Payment failed. Please try again.");
         console.error("Hormuud response error:", dataHormuud);
+        setErrorMessage("Payment failed. Please try again.");
         return;
       }
 
-      alert("Payment successful ✔");
+      // ✅ SUCCESS
+      setSuccessMessage("Payment successful ✔");
 
       // CLEAR CART
       clearCart();
@@ -149,7 +141,7 @@ export default function CheckoutPage() {
 
     } catch (err) {
       console.error("Unexpected error:", err);
-      alert("Something went wrong. Please try again.");
+      setErrorMessage("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -157,7 +149,6 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-900 pb-10">
-
       {/* Sticky Header */}
       <div className="sticky top-0 z-50 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border-b p-4">
         <h1 className="text-2xl font-bold text-center text-black dark:text-white">
@@ -295,6 +286,36 @@ export default function CheckoutPage() {
         )}
 
       </div>
+
+      {/* ✅ Error Toast */}
+      {errorMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-lg animate-slideIn">
+          <div className="flex justify-between items-center gap-4">
+            <span>{errorMessage}</span>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="font-bold hover:text-gray-200"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Success Toast */}
+      {successMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg animate-slideIn">
+          <div className="flex justify-between items-center gap-4">
+            <span>{successMessage}</span>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="font-bold hover:text-gray-200"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
