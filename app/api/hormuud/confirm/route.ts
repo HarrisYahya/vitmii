@@ -5,19 +5,34 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { phone, total, district, delivery, deliveryFee, items } = body;
 
+    // ===============================
+    // Basic validation (unchanged)
+    // ===============================
     if (!phone || !total) {
-      return NextResponse.json({ status: "ERROR", message: "Missing phone or total" }, { status: 400 });
+      return NextResponse.json(
+        { status: "ERROR", message: "Missing phone or total" },
+        { status: 400 }
+      );
     }
 
-    const { HORMUUD_MERCHANT_UID, HORMUUD_API_USER, HORMUUD_TOKEN } = process.env;
+    // ===============================
+    // Hormuud credentials (CORRECT)
+    // ===============================
+    const { MERCHANT_UID, API_USER_ID, API_KEY } = process.env;
 
-    if (!HORMUUD_MERCHANT_UID || !HORMUUD_API_USER || !HORMUUD_TOKEN) {
+    if (!MERCHANT_UID || !API_USER_ID || !API_KEY) {
       return NextResponse.json(
-        { status: "ERROR", message: "Server misconfigured. Please contact admin." },
+        {
+          status: "ERROR",
+          message: "Server misconfigured. Please contact admin.",
+        },
         { status: 500 }
       );
     }
 
+    // ===============================
+    // Hormuud payload (structure kept)
+    // ===============================
     const payload = {
       schemaVersion: "1.0",
       requestId: Date.now().toString(),
@@ -25,44 +40,71 @@ export async function POST(req: Request) {
       channelName: "WEB",
       serviceName: "API_PURCHASE",
       serviceParams: {
-        merchantUid: HORMUUD_MERCHANT_UID,
-        apiUserId: HORMUUD_API_USER,
+        merchantUid: MERCHANT_UID,
+        apiUserId: API_USER_ID,
+        apiKey: API_KEY,
         amount: total,
-        payerInfo: { accountNo: phone },
+        payerInfo: {
+          accountNo: phone,
+        },
         description: `Order (${district})`,
       },
     };
 
-    const response = await fetch("https://api.hormuud.com/evcplus/payment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${HORMUUD_TOKEN}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    // ===============================
+    // Call Hormuud API
+    // ===============================
+    const response = await fetch(
+      "https://api.hormuud.com/evcplus/payment",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const text = await response.text();
 
     if (!response.ok) {
-      const text = await response.text();
       return NextResponse.json(
         { status: "ERROR", message: `Payment failed: ${text}` },
         { status: 500 }
       );
     }
 
-    const data = await response.json();
+    const data = JSON.parse(text);
 
-    if (!data || data.status !== "SUCCESS") {
+    // ===============================
+    // Handle Hormuud response clearly
+    // ===============================
+    if (data.status !== "SUCCESS") {
       return NextResponse.json(
-        { status: "ERROR", message: data?.message || "Payment failed. Try again." },
-        { status: 500 }
+        {
+          status: "ERROR",
+          message:
+            data.message ||
+            data.responseMessage ||
+            "Payment failed. Please try again.",
+        },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json({ status: "SUCCESS", hormuud: data });
+    // ===============================
+    // Success
+    // ===============================
+    return NextResponse.json({
+      status: "SUCCESS",
+      hormuud: data,
+    });
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ status: "ERROR", message: `Server error: ${msg}` }, { status: 500 });
+    return NextResponse.json(
+      { status: "ERROR", message: `Server error: ${msg}` },
+      { status: 500 }
+    );
   }
 }
