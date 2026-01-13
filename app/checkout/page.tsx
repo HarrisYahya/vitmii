@@ -1,3 +1,4 @@
+// vitmii/app/checkout/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-store";
 
+// District list
 const districts = [
   "Abdiaziz","Bondhere","Daynile","Dharkenley","Hamar Jajab","Hamar Weyne",
   "Hodan","Howlwadaag","Kahda","Karaan","Shangani","Shibis",
@@ -33,6 +35,13 @@ const deliveryPrices: Record<string, number> = {
   Heliwaa: 2,
 };
 
+type CartItem = {
+  id: string | number;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
   const [mounted, setMounted] = useState(false);
@@ -44,7 +53,7 @@ export default function CheckoutPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ New: Toast states
+  // Toast states
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -82,7 +91,7 @@ export default function CheckoutPage() {
         qty: item.quantity,
       }));
 
-      // ✅ SAVE ORDER TO SUPABASE
+      // Save order to Supabase
       const { data, error } = await supabase.from("orders").insert([
         {
           total_price: total,
@@ -99,8 +108,8 @@ export default function CheckoutPage() {
         return;
       }
 
-      // ✅ CALL HORMUUD API
-      const res = await fetch("/api/hormuud/confirm", {
+      // Call WaafiPay API
+      const res = await fetch("/api/waafipay/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,23 +124,23 @@ export default function CheckoutPage() {
 
       if (!res.ok) {
         const text = await res.text();
-        console.error("Hormuud API failed:", res.status, text);
+        console.error("WaafiPay API failed:", res.status, text);
         setErrorMessage("Payment failed. Please try again.");
         return;
       }
 
-      const dataHormuud = await res.json();
+      const dataWaafi = await res.json();
 
-      if (dataHormuud.status !== "SUCCESS") {
-        console.error("Hormuud response error:", dataHormuud);
+      if (dataWaafi.status !== "SUCCESS") {
+        console.error("WaafiPay response error:", dataWaafi);
         setErrorMessage("Payment failed. Please try again.");
         return;
       }
 
-      // ✅ SUCCESS
+      // Success
       setSuccessMessage("Payment successful ✔");
 
-      // CLEAR CART
+      // Clear cart
       clearCart();
       setPhone("");
       setDistrict("");
@@ -287,7 +296,7 @@ export default function CheckoutPage() {
 
       </div>
 
-      {/* ✅ Error Toast */}
+      {/* Error Toast */}
       {errorMessage && (
         <div className="fixed top-5 right-5 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-lg animate-slideIn">
           <div className="flex justify-between items-center gap-4">
@@ -302,7 +311,7 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      {/* ✅ Success Toast */}
+      {/* Success Toast */}
       {successMessage && (
         <div className="fixed top-5 right-5 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg animate-slideIn">
           <div className="flex justify-between items-center gap-4">
