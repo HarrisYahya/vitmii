@@ -1,8 +1,11 @@
- // context/AdminContext.tsx
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+
+/* =====================================================
+   TYPES
+===================================================== */
 
 export type Product = {
   id: string;
@@ -28,17 +31,22 @@ export type HeroImage = {
   created_at?: string | null;
 };
 
- type Order = {
+export type Order = {
   id: string;
   total_price: number;
   created_at: string;
   items: any[];
 
-  // ✅ ADD THESE:
   customer_phone: string | null;
   district: string | null;
+
+  // ✅ REQUIRED FOR ADMIN (MARK AS READ, UNREAD COUNT)
+  read?: boolean;
 };
 
+/* =====================================================
+   CONTEXT TYPE
+===================================================== */
 
 type AdminContextType = {
   products: Product[];
@@ -48,16 +56,31 @@ type AdminContextType = {
   refresh: () => Promise<void>;
 };
 
+/* =====================================================
+   CONTEXT
+===================================================== */
+
 const AdminContext = createContext<AdminContextType | null>(null);
 
-export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
+/* =====================================================
+   PROVIDER
+===================================================== */
+
+export const AdminProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
 
-  async function loadData() {
-    // Load products / categories / orders / hero_images in parallel
+  /* =====================================================
+     LOAD ALL ADMIN DATA
+  ===================================================== */
+
+  const loadData = async () => {
     const [
       { data: productData },
       { data: categoryData },
@@ -66,8 +89,10 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
     ] = await Promise.all([
       supabase.from("products").select("*"),
       supabase.from("categories").select("*"),
-      supabase.from("orders").select("*"),
-      // order by position if available, then created_at
+      supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false }),
       supabase
         .from("hero_images")
         .select("*")
@@ -75,15 +100,23 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
         .order("created_at", { ascending: true }),
     ]);
 
-    setProducts((productData as Product[] | null) || []);
-    setCategories((categoryData as Category[] | null) || []);
-    setOrders((orderData as Order[] | null) || []);
-    setHeroImages((heroData as HeroImage[] | null) || []);
-  }
+    setProducts((productData as Product[]) || []);
+    setCategories((categoryData as Category[]) || []);
+    setOrders((orderData as Order[]) || []);
+    setHeroImages((heroData as HeroImage[]) || []);
+  };
+
+  /* =====================================================
+     INIT LOAD
+  ===================================================== */
 
   useEffect(() => {
     loadData();
   }, []);
+
+  /* =====================================================
+     PROVIDER VALUE
+  ===================================================== */
 
   return (
     <AdminContext.Provider
@@ -100,8 +133,14 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+/* =====================================================
+   HOOK
+===================================================== */
+
 export const useAdmin = () => {
   const ctx = useContext(AdminContext);
-  if (!ctx) throw new Error("useAdmin must be inside AdminProvider");
+  if (!ctx) {
+    throw new Error("useAdmin must be used inside AdminProvider");
+  }
   return ctx;
 };

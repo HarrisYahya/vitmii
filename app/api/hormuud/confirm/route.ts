@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { phone, total, district, delivery, deliveryFee, items } = body;
+    const { phone, total, district } = body;
 
     // ===============================
     // Basic validation (unchanged)
@@ -16,22 +16,28 @@ export async function POST(req: Request) {
     }
 
     // ===============================
-    // Hormuud credentials (CORRECT)
+    // WaafiPay credentials
     // ===============================
-    const { MERCHANT_UID, API_USER_ID, API_KEY } = process.env;
+    const {
+      WAAFIPAY_MERCHANT_UID,
+      WAAFIPAY_API_USER,
+      WAAFIPAY_API_KEY,
+    } = process.env;
 
-    if (!MERCHANT_UID || !API_USER_ID || !API_KEY) {
+    if (
+      !WAAFIPAY_MERCHANT_UID ||
+      !WAAFIPAY_API_USER ||
+      !WAAFIPAY_API_KEY
+    ) {
+      console.error("WaafiPay credentials missing");
       return NextResponse.json(
-        {
-          status: "ERROR",
-          message: "Server misconfigured. Please contact admin.",
-        },
+        { status: "ERROR", message: "Server misconfiguration" },
         { status: 500 }
       );
     }
 
     // ===============================
-    // Hormuud payload (structure kept)
+    // WaafiPay payload (OFFICIAL)
     // ===============================
     const payload = {
       schemaVersion: "1.0",
@@ -40,9 +46,8 @@ export async function POST(req: Request) {
       channelName: "WEB",
       serviceName: "API_PURCHASE",
       serviceParams: {
-        merchantUid: MERCHANT_UID,
-        apiUserId: API_USER_ID,
-        apiKey: API_KEY,
+        merchantUid: WAAFIPAY_MERCHANT_UID,
+        apiUserId: WAAFIPAY_API_USER,
         amount: total,
         payerInfo: {
           accountNo: phone,
@@ -52,14 +57,15 @@ export async function POST(req: Request) {
     };
 
     // ===============================
-    // Call Hormuud API
+    // Call WaafiPay API
     // ===============================
     const response = await fetch(
-      "https://api.hormuud.com/evcplus/payment",
+      "https://api.waafipay.net/asm",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${WAAFIPAY_API_KEY}`,
         },
         body: JSON.stringify(payload),
       }
@@ -68,8 +74,9 @@ export async function POST(req: Request) {
     const text = await response.text();
 
     if (!response.ok) {
+      console.error("WaafiPay error:", text);
       return NextResponse.json(
-        { status: "ERROR", message: `Payment failed: ${text}` },
+        { status: "ERROR", message: "Payment failed" },
         { status: 500 }
       );
     }
@@ -77,7 +84,7 @@ export async function POST(req: Request) {
     const data = JSON.parse(text);
 
     // ===============================
-    // Handle Hormuud response clearly
+    // WaafiPay response handling
     // ===============================
     if (data.status !== "SUCCESS") {
       return NextResponse.json(
@@ -97,13 +104,13 @@ export async function POST(req: Request) {
     // ===============================
     return NextResponse.json({
       status: "SUCCESS",
-      hormuud: data,
+      waafipay: data,
     });
 
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+  } catch (error) {
+    console.error("WaafiPay exception:", error);
     return NextResponse.json(
-      { status: "ERROR", message: `Server error: ${msg}` },
+      { status: "ERROR", message: "Server error" },
       { status: 500 }
     );
   }
