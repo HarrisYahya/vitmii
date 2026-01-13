@@ -18,9 +18,18 @@ interface RequestBody {
 export async function POST(req: Request) {
   try {
     const body: RequestBody = await req.json();
-    const { phone, total, district } = body;
+    const {
+      phone,
+      total,
+      district,
+      delivery,
+      deliveryFee,
+      items,
+    } = body;
 
-    // ✅ Basic validation (unchanged behavior)
+    // ===============================
+    // Basic validation (UNCHANGED)
+    // ===============================
     if (!phone || !total) {
       return NextResponse.json(
         { status: "ERROR", message: "Missing phone or total" },
@@ -28,73 +37,88 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Load Hormuud credentials
+    // ===============================
+    // ENV VARIABLES (FIXED ONLY)
+    // ===============================
     const {
-      HORMUUD_MERCHANT_UID,
-      HORMUUD_API_USER,
-      HORMUUD_TOKEN,
+      MERCHANT_UID,
+      API_USER_ID,
+      API_KEY,
     } = process.env;
 
-    if (!HORMUUD_MERCHANT_UID || !HORMUUD_API_USER || !HORMUUD_TOKEN) {
-      console.error("Hormuud credentials missing");
+    if (!MERCHANT_UID || !API_USER_ID || !API_KEY) {
+      console.error("Hormuud credentials missing!");
       return NextResponse.json(
         { status: "ERROR", message: "Server misconfiguration" },
         { status: 500 }
       );
     }
 
-    // ✅ REAL Hormuud payload (official structure)
+    // ===============================
+    // Build Hormuud payload
+    // ===============================
     const payload = {
       schemaVersion: "1.0",
-      requestId: Date.now().toString(),
-      timestamp: new Date().toISOString(),
+      requestId: crypto.randomUUID(),
+      timestamp: Date.now(),
       channelName: "WEB",
       serviceName: "API_PURCHASE",
       serviceParams: {
-        merchantUid: HORMUUD_MERCHANT_UID,
-        apiUserId: HORMUUD_API_USER,
-        amount: total,
+        merchantUid: MERCHANT_UID,
+        apiUserId: API_USER_ID,
+        apiKey: API_KEY,
         payerInfo: {
           accountNo: phone,
         },
-        description: `Order (${district})`,
+        transactionInfo: {
+          referenceId: `ORDER-${Date.now()}`,
+          invoiceId: `INV-${Date.now()}`,
+          amount: total,
+          currency: "USD",
+          description: "Vitmii Order Payment",
+        },
       },
     };
 
-    // ✅ REAL Hormuud API call (production)
+    // ===============================
+    // Send request to Hormuud
+    // ===============================
     const response = await fetch(
-      "https://api.hormuud.com/evcplus/payment",
+      "https://api.waafipay.net/asm",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${HORMUUD_TOKEN}`,
         },
         body: JSON.stringify(payload),
       }
     );
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Hormuud API error:", response.status, errorText);
+      console.error("Hormuud API error:", data);
       return NextResponse.json(
-        { status: "ERROR", message: "Hormuud payment failed" },
+        {
+          status: "ERROR",
+          message: "Hormuud API failed",
+          details: data,
+        },
         { status: 500 }
       );
     }
 
-    const hormuudResponse = await response.json();
-
-    // ✅ Success response (frontend already handles this)
+    // ===============================
+    // SUCCESS
+    // ===============================
     return NextResponse.json({
       status: "SUCCESS",
-      hormuud: hormuudResponse,
+      data,
     });
-
   } catch (error) {
-    console.error("Hormuud API exception:", error);
+    console.error("Hormuud confirm error:", error);
     return NextResponse.json(
-      { status: "ERROR", message: "Server error" },
+      { status: "ERROR", message: "Internal server error" },
       { status: 500 }
     );
   }
