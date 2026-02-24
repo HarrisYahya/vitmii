@@ -19,6 +19,11 @@ type RequestBody = {
   items: Item[];
 };
 
+// ✅ SAFE PHONE VALIDATOR (ADDED)
+function isValidSomaliPhone(phone: string): boolean {
+  return /^252\d{9}$/.test(phone);
+}
+
 export async function POST(req: Request) {
   try {
     const body: RequestBody = await req.json();
@@ -28,6 +33,18 @@ export async function POST(req: Request) {
     if (!phone || !total || !district || !items?.length) {
       return NextResponse.json(
         { status: "ERROR", message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // ✅ PHONE FORMAT VALIDATION (ADDED)
+    if (!isValidSomaliPhone(phone)) {
+      return NextResponse.json(
+        {
+          status: "ERROR",
+          message:
+            "Invalid phone format. Use 252XXXXXXXXX (numbers only, no + or spaces)",
+        },
         { status: 400 }
       );
     }
@@ -52,7 +69,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ FIXED payment method (THIS WAS THE BUG)
+    // Payment method (VALID)
     const paymentMethod = "MWALLET_ACCOUNT";
 
     // Build payload
@@ -68,7 +85,7 @@ export async function POST(req: Request) {
         apiKey: WAAFIPAY_API_KEY,
         paymentMethod,
         payerInfo: {
-          accountNo: phone, // EVC number (2526XXXXXXXX)
+          accountNo: phone,
         },
         transactionInfo: {
           referenceId: `ORDER-${Date.now()}`,
