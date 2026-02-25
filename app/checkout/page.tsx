@@ -109,8 +109,8 @@ export default function CheckoutPage() {
       }
 
       // Call WaafiPay API
-       const res = await fetch(
-  `${process.env.NEXT_PUBLIC_WAAFIPAY_BACKEND_URL}/waafipay/confirm`,
+     const res = await fetch(
+  "https://waafipay-backend-production.up.railway.app/waafipay/confirm",
   {
     method: "POST",
     headers: { "Content-Type": "application/json" },
