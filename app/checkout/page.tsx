@@ -109,18 +109,21 @@ export default function CheckoutPage() {
       }
 
       // Call WaafiPay API
-      const res = await fetch("/api/waafipay/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone,
-          total,
-          district,
-          delivery,
-          deliveryFee,
-          items: formattedItems,
-        }),
-      });
+       const res = await fetch(
+  `${process.env.NEXT_PUBLIC_WAAFIPAY_BACKEND_URL}/waafipay/confirm`,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone,
+      total,
+      district,
+      delivery,
+      deliveryFee,
+      items: formattedItems,
+    }),
+  }
+);
 
       if (!res.ok) {
         const text = await res.text();
