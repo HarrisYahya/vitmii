@@ -1,4 +1,3 @@
-// vitmii/app/checkout/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -42,6 +41,18 @@ type CartItem = {
   quantity: number;
 };
 
+/* =========================
+   SAFE PHONE NORMALIZER
+========================= */
+function normalizeSomaliPhone(input: string) {
+  let p = input.replace(/\D/g, "");
+
+  if (p.startsWith("0")) p = "252" + p.slice(1);
+  if (p.startsWith("252252")) p = p.slice(3);
+
+  return p;
+}
+
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
   const [mounted, setMounted] = useState(false);
@@ -60,7 +71,10 @@ export default function CheckoutPage() {
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
   const deliveryFee = delivery ? deliveryPrices[district] || 0 : 0;
   const total = subtotal + deliveryFee;
 
@@ -84,6 +98,7 @@ export default function CheckoutPage() {
   async function confirmOrderAndSend() {
     try {
       setLoading(true);
+
       const formattedItems = items.map((item) => ({
         id: item.id,
         title: item.name,
@@ -92,7 +107,7 @@ export default function CheckoutPage() {
       }));
 
       // Save order to Supabase
-      const { data, error } = await supabase.from("orders").insert([
+      const { error } = await supabase.from("orders").insert([
         {
           total_price: total,
           customer_phone: phone,
@@ -108,22 +123,22 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Call WaafiPay API
-     const res = await fetch(
-  "https://waafipay-backend-production.up.railway.app/waafipay/confirm",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      phone,
-      total,
-      district,
-      delivery,
-      deliveryFee,
-      items: formattedItems,
-    }),
-  }
-);
+      // Call WaafiPay backend (PHONE NORMALIZED HERE ✅)
+      const res = await fetch(
+        "https://waafipay-backend-production.up.railway.app/waafipay/confirm",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: normalizeSomaliPhone(phone),
+            total,
+            district,
+            delivery,
+            deliveryFee,
+            items: formattedItems,
+          }),
+        }
+      );
 
       if (!res.ok) {
         const text = await res.text();
@@ -143,7 +158,6 @@ export default function CheckoutPage() {
       // Success
       setSuccessMessage("Payment successful ✔");
 
-      // Clear cart
       clearCart();
       setPhone("");
       setDistrict("");
@@ -296,35 +310,24 @@ export default function CheckoutPage() {
             </div>
           </div>
         )}
-
       </div>
 
       {/* Error Toast */}
       {errorMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-lg animate-slideIn">
+        <div className="fixed top-5 right-5 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-lg">
           <div className="flex justify-between items-center gap-4">
             <span>{errorMessage}</span>
-            <button
-              onClick={() => setErrorMessage(null)}
-              className="font-bold hover:text-gray-200"
-            >
-              ✕
-            </button>
+            <button onClick={() => setErrorMessage(null)}>✕</button>
           </div>
         </div>
       )}
 
       {/* Success Toast */}
       {successMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg animate-slideIn">
+        <div className="fixed top-5 right-5 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg">
           <div className="flex justify-between items-center gap-4">
             <span>{successMessage}</span>
-            <button
-              onClick={() => setSuccessMessage(null)}
-              className="font-bold hover:text-gray-200"
-            >
-              ✕
-            </button>
+            <button onClick={() => setSuccessMessage(null)}>✕</button>
           </div>
         </div>
       )}
