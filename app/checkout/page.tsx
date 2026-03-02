@@ -123,7 +123,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Call WaafiPay backend
+      // Call WaafiPay backend (PHONE NORMALIZED HERE ✅)
       const res = await fetch(
         "https://waafipay-backend-production.up.railway.app/waafipay/confirm",
         {
