@@ -95,7 +95,7 @@ export default function CheckoutPage() {
     setShowConfirm(true);
   }
 
-  async function confirmOrderAndSend() {
+   async function confirmOrderAndSend() {
   try {
     setLoading(true);
 
@@ -106,41 +106,33 @@ export default function CheckoutPage() {
       qty: item.quantity,
     }));
 
-    /* =========================
-       SAVE ORDER FIRST
-    ========================= */
-    const { error } = await supabase.from("orders").insert([
-      {
-        total_price: total,
-        customer_phone: phone,
+    // =========================
+    // SAVE ORDER ASYNC (non-blocking)
+    // =========================
+    const insertPromise = supabase.from("orders").insert([{
+      total_price: total,
+      customer_phone: phone,
+      district,
+      delivery,
+      delivery_fee: deliveryFee,
+      items: formattedItems,
+    }]);
+
+    // =========================
+    // CALL WAAFIPAY SIMULTANEOUSLY
+    // =========================
+    const res = await fetch("https://vitmiin-waafipay-backend-production.up.railway.app/waafipay/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: normalizeSomaliPhone(phone),
+        total,
         district,
         delivery,
-        delivery_fee: deliveryFee,
+        deliveryFee,
         items: formattedItems,
-      },
-    ]);
-
-    if (error) {
-      setErrorMessage("Failed to save order.");
-      return;
-    }
-
-    /* =========================
-       CALL NEXTJS API ✅
-       (NO RAILWAY)
-    ========================= */
-    const res = await  fetch("https://vitmiin-waafipay-backend-production.up.railway.app/waafipay/confirm", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    phone: normalizeSomaliPhone(phone),
-    total,
-    district,
-    delivery,
-    deliveryFee,
-    items: formattedItems,
-  }),
-});
+      }),
+    });
 
     const dataWaafi = await res.json();
 
@@ -150,9 +142,13 @@ export default function CheckoutPage() {
       return;
     }
 
-    /* =========================
-       SUCCESS
-    ========================= */
+    // Await the Supabase insert result after WaafiPay is done
+    const { error } = await insertPromise;
+    if (error) console.error("Supabase save error:", error);
+
+    // =========================
+    // SUCCESS
+    // =========================
     setSuccessMessage("Payment successful ✔");
 
     clearCart();
@@ -169,7 +165,6 @@ export default function CheckoutPage() {
     setLoading(false);
   }
 }
-
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-900 pb-10">
       {/* Sticky Header */}
