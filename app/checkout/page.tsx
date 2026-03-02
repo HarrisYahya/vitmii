@@ -96,82 +96,81 @@ export default function CheckoutPage() {
   }
 
   async function confirmOrderAndSend() {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const formattedItems = items.map((item) => ({
-        id: item.id,
-        title: item.name,
-        price: item.price,
-        qty: item.quantity,
-      }));
+    const formattedItems = items.map((item) => ({
+      id: item.id,
+      title: item.name,
+      price: item.price,
+      qty: item.quantity,
+    }));
 
-      // Save order to Supabase
-      const { error } = await supabase.from("orders").insert([
-        {
-          total_price: total,
-          customer_phone: phone,
-          district,
-          delivery,
-          delivery_fee: deliveryFee,
-          items: formattedItems,
-        },
-      ]);
+    /* =========================
+       SAVE ORDER FIRST
+    ========================= */
+    const { error } = await supabase.from("orders").insert([
+      {
+        total_price: total,
+        customer_phone: phone,
+        district,
+        delivery,
+        delivery_fee: deliveryFee,
+        items: formattedItems,
+      },
+    ]);
 
-      if (error) {
-        setErrorMessage("Failed to save order. Please try again.");
-        return;
-      }
-
-      // Call WaafiPay backend (PHONE NORMALIZED HERE ✅)
-      const res = await fetch(
-        "https://waafipay-backend-production.up.railway.app/waafipay/confirm",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: normalizeSomaliPhone(phone),
-            total,
-            district,
-            delivery,
-            deliveryFee,
-            items: formattedItems,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("WaafiPay API failed:", res.status, text);
-        setErrorMessage("Payment failed. Please try again.");
-        return;
-      }
-
-      const dataWaafi = await res.json();
-
-      if (dataWaafi.status !== "SUCCESS") {
-        console.error("WaafiPay response error:", dataWaafi);
-        setErrorMessage("Payment failed. Please try again.");
-        return;
-      }
-
-      // Success
-      setSuccessMessage("Payment successful ✔");
-
-      clearCart();
-      setPhone("");
-      setDistrict("");
-      setDelivery(false);
-      setInfoSubmitted(false);
-      setShowConfirm(false);
-
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      setErrorMessage("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+    if (error) {
+      setErrorMessage("Failed to save order.");
+      return;
     }
+
+    /* =========================
+       CALL NEXTJS API ✅
+       (NO RAILWAY)
+    ========================= */
+    const res = await fetch("https://vitmiin-waafipay-backend.up.railway.app/waafipay/confirm", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone: normalizeSomaliPhone(phone),
+        total,
+        district,
+        delivery,
+        deliveryFee,
+        items: formattedItems,
+      }),
+    });
+
+    const dataWaafi = await res.json();
+
+    if (!res.ok || dataWaafi.status !== "SUCCESS") {
+      console.error("Payment error:", dataWaafi);
+      setErrorMessage("Payment failed. Try again.");
+      return;
+    }
+
+    /* =========================
+       SUCCESS
+    ========================= */
+    setSuccessMessage("Payment successful ✔");
+
+    clearCart();
+    setPhone("");
+    setDistrict("");
+    setDelivery(false);
+    setInfoSubmitted(false);
+    setShowConfirm(false);
+
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    setErrorMessage("Something went wrong.");
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-900 pb-10">
