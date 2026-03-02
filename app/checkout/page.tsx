@@ -129,20 +129,18 @@ export default function CheckoutPage() {
        CALL NEXTJS API ✅
        (NO RAILWAY)
     ========================= */
-    const res = await fetch("https://vitmiin-waafipay-backend.up.railway.app/waafipay/confirm", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        phone: normalizeSomaliPhone(phone),
-        total,
-        district,
-        delivery,
-        deliveryFee,
-        items: formattedItems,
-      }),
-    });
+    const res = await  fetch("https://vitmiin-waafipay-backend-production.up.railway.app/waafipay/confirm", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    phone: normalizeSomaliPhone(phone),
+    total,
+    district,
+    delivery,
+    deliveryFee,
+    items: formattedItems,
+  }),
+});
 
     const dataWaafi = await res.json();
 
