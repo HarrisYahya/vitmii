@@ -41,38 +41,32 @@ export async function POST(req: NextRequest) {
     const now = Date.now().toString();
 
     const payload = {
-      schemaVersion: "1.0",
-      requestId: now,
-      timestamp: new Date().toISOString(),
-      channelName: "WEB",
-      serviceName: "API_PURCHASE",
-
-      serviceParams: {
-        merchantUid: WAAFIPAY_MERCHANT_UID,
-        apiUserId: WAAFIPAY_API_USER_ID,
-        apiKey: WAAFIPAY_API_KEY,
-        paymentMethod: "MWALLET_ACCOUNT",
-
-        payerInfo: {
-          accountNo: phone,
-        },
-
-        transactionInfo: {
-          referenceId: `ORDER-${now}`,
-          invoiceId: `INV-${now}`,
-          amount: total,
-          currency: "USD",
-          description: "Vitmiin Order Payment",
-
-          items: items.map((i: any) => ({
-            itemId: i.id,
-            description: i.title,
-            quantity: i.qty,
-            price: i.price,
-          })),
-        },
-      },
-    };
+  schemaVersion: "1.0",
+  requestId: now,
+  timestamp: new Date().toISOString(),
+  channelName: "WEB",
+  serviceName: "API_PURCHASE",
+  serviceParams: {
+    apiUserId: WAAFIPAY_API_USER_ID, // ✅ here
+    apiKey: WAAFIPAY_API_KEY,       // ✅ here
+    merchantUid: WAAFIPAY_MERCHANT_UID,
+    paymentMethod: "MWALLET_ACCOUNT",
+    payerInfo: { accountNo: phone },
+    transactionInfo: {
+      referenceId: `ORDER-${now}`,
+      invoiceId: `INV-${now}`,
+      amount: total,
+      currency: "USD",
+      description: "Vitmiin Order Payment",
+      items: items.map((i: any) => ({
+        itemId: i.id,
+        description: i.title,
+        quantity: i.qty,
+        price: i.price,
+      })),
+    },
+  },
+};
 
     console.log("WAAFI REQUEST:", JSON.stringify(payload, null, 2));
 
