@@ -38,20 +38,20 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ FIX — declare now
+      // ✅ declare now
     const now = Date.now().toString();
-
-    const payload = {
+ const payload = {
   schemaVersion: "1.0",
   requestId: now,
   timestamp: new Date().toISOString(),
   channelName: "WEB",
   serviceName: "API_PURCHASE",
   serviceParams: {
-    apiUserId: WAAFIPAY_API_USER_ID, // ✅ here
-    apiKey: WAAFIPAY_API_KEY,       // ✅ here
     merchantUid: WAAFIPAY_MERCHANT_UID,
+    apiUserId: WAAFIPAY_API_USER_ID, // ✅ inside serviceParams
+    apiKey: WAAFIPAY_API_KEY,        // ✅ inside serviceParams
     paymentMethod: "MWALLET_ACCOUNT",
-    payerInfo: { accountNo: phone },
+    payerInfo: { accountNo: `+${phone}` }, // ✅ include +
     transactionInfo: {
       referenceId: `ORDER-${now}`,
       invoiceId: `INV-${now}`,
