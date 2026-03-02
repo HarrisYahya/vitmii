@@ -1,7 +1,8 @@
-// vitmii/app/api/waafipay/confirm/route.ts
 import { NextResponse } from "next/server";
 
-// Item type
+/* =========================
+   TYPES
+========================= */
 type Item = {
   id: string | number;
   title: string;
@@ -9,7 +10,6 @@ type Item = {
   qty: number;
 };
 
-// Request body type
 type RequestBody = {
   phone: string;
   total: number;
@@ -19,17 +19,30 @@ type RequestBody = {
   items: Item[];
 };
 
-// ✅ SAFE PHONE VALIDATOR (ADDED)
-function isValidSomaliPhone(phone: string): boolean {
+/* =========================
+   HELPERS
+========================= */
+function isValidSomaliPhone(phone: string) {
   return /^252\d{9}$/.test(phone);
 }
 
+function waafiTimestamp() {
+  const d = new Date();
+  const pad = (n: number) => n.toString().padStart(2, "0");
+
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+    d.getDate()
+  )} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* =========================
+   POST HANDLER
+========================= */
 export async function POST(req: Request) {
   try {
     const body: RequestBody = await req.json();
     const { phone, total, district, items } = body;
 
-    // Basic validation
     if (!phone || !total || !district || !items?.length) {
       return NextResponse.json(
         { status: "ERROR", message: "Missing required fields" },
@@ -37,19 +50,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ PHONE FORMAT VALIDATION (ADDED)
     if (!isValidSomaliPhone(phone)) {
       return NextResponse.json(
         {
           status: "ERROR",
-          message:
-            "Invalid phone format. Use 252XXXXXXXXX (numbers only, no + or spaces)",
+          message: "Invalid phone format. Use 252XXXXXXXXX",
         },
         { status: 400 }
       );
     }
 
-    // Read env variables
     const {
       WAAFIPAY_ENV,
       WAAFIPAY_MERCHANT_UID,
@@ -62,75 +72,65 @@ export async function POST(req: Request) {
       !WAAFIPAY_API_USER_ID ||
       !WAAFIPAY_API_KEY
     ) {
-      console.error("WaafiPay credentials missing");
+      console.error("❌ Missing WaafiPay ENV");
       return NextResponse.json(
         { status: "ERROR", message: "Server configuration error" },
         { status: 500 }
       );
     }
 
-    // Payment method (VALID)
-    const paymentMethod = "MWALLET_ACCOUNT";
-
-    // Build payload
+    /* =========================
+       WAAFIPAY PAYLOAD (STRICT)
+    ========================= */
     const payload = {
       schemaVersion: "1.0",
       requestId: Date.now().toString(),
-      timestamp: new Date().toISOString(),
+      timestamp: waafiTimestamp(),
       channelName: "WEB",
       serviceName: "API_PURCHASE",
       serviceParams: {
         merchantUid: WAAFIPAY_MERCHANT_UID,
-        apiUserId: WAAFIPAY_API_USER_ID,
+        apiUserId: String(WAAFIPAY_API_USER_ID),
         apiKey: WAAFIPAY_API_KEY,
-        paymentMethod,
+        paymentMethod: "MWALLET_ACCOUNT",
         payerInfo: {
           accountNo: phone,
         },
         transactionInfo: {
           referenceId: `ORDER-${Date.now()}`,
           invoiceId: `INV-${Date.now()}`,
-          amount: total,
+          amount: total.toFixed(2),
           currency: "USD",
           description: "Vitmiin Order Payment",
           items: items.map((i) => ({
-            itemId: i.id,
+            itemId: String(i.id),
             description: i.title,
-            quantity: i.qty,
-            price: i.price,
+            quantity: String(i.qty),
+            price: i.price.toFixed(2),
           })),
         },
       },
     };
 
-    // Select endpoint
     const waafiUrl =
       WAAFIPAY_ENV === "live"
         ? "https://api.waafipay.net/asm"
         : "https://sandbox.waafipay.net/asm";
 
-    // Call WaafiPay
     const response = await fetch(waafiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
       body: JSON.stringify(payload),
     });
 
     const result = await response.json();
 
-    // Handle WaafiPay error
     if (result.responseCode !== "2001") {
-      console.error("WaafiPay API error:", result);
-
-      // Sandbox fallback (SAFE)
-      if (WAAFIPAY_ENV !== "live") {
-        console.log("⚡ Sandbox mode: simulating success");
-        return NextResponse.json({
-          status: "SUCCESS",
-          simulated: true,
-        });
-      }
-
+      console.error("❌ WaafiPay ERROR:", result);
       return NextResponse.json(
         {
           status: "ERROR",
@@ -141,13 +141,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Success
     return NextResponse.json({
       status: "SUCCESS",
       waafipay: result,
     });
-  } catch (error) {
-    console.error("Server error:", error);
+  } catch (err) {
+    console.error("🔥 Server error:", err);
     return NextResponse.json(
       { status: "ERROR", message: "Internal server error" },
       { status: 500 }
