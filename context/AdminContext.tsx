@@ -40,8 +40,11 @@ export type Order = {
   customer_phone: string | null;
   district: string | null;
 
-  // ✅ REQUIRED FOR ADMIN (MARK AS READ, UNREAD COUNT)
-  read?: boolean;
+  // ✅ ORDER STATUS
+  status?: "pending" | "processing" | "delivered" | "cancelled" | null;
+
+  // ✅ READ STATUS
+  read?: boolean | null;
 };
 
 /* =====================================================

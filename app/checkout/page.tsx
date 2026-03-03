@@ -9,7 +9,7 @@ import { useCart } from "@/lib/cart-store";
 const districts = [
   "Abdiaziz","Bondhere","Daynile","Dharkenley","Hamar Jajab","Hamar Weyne",
   "Hodan","Howlwadaag","Kahda","Karaan","Shangani","Shibis",
-  "Waberi","Wadajir","Wardhiigley","Yaqshid","Huriwaa","Heliwaa",
+  "Waberi","Wadajir","Wardhiigley","Yaqshid","Huriwaa","Heliwaa", "Ceelasha", "Darusalam", "Tabeelaha", "Garasbaalay",
 ];
 
 // DELIVERY FEES BY DISTRICT
@@ -32,6 +32,10 @@ const deliveryPrices: Record<string, number> = {
   Yaqshid: 2,
   Huriwaa: 2,
   Heliwaa: 2,
+  Garasbaalay: 2,
+  Tabeelaha: 1.5,
+  Darusalam: 2.5,
+  Ceelasha: 2.5,
 };
 
 type CartItem = {
@@ -184,13 +188,27 @@ export default function CheckoutPage() {
           <>
             {!infoSubmitted && (
               <div className="space-y-4 mb-8">
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  className="w-full border p-4 rounded-xl bg-white text-black dark:bg-neutral-900 dark:text-white"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
+                 <input
+  type="tel"
+  placeholder="252XXXXXXXXX"
+  className="w-full border p-4 rounded-xl bg-white text-black dark:bg-neutral-900 dark:text-white"
+  value={phone}
+  onChange={(e) => {
+    let value = e.target.value.replace(/\D/g, "");
+
+    // Always start with 252
+    if (!value.startsWith("252")) {
+      value = "252" + value.replace(/^252/, "");
+    }
+
+    // Limit to 12 digits total (252 + 9 digits)
+    if (value.length > 12) {
+      value = value.slice(0, 12);
+    }
+
+    setPhone(value);
+  }}
+/>
 
                 <select
                   className="w-full border p-4 rounded-xl bg-white text-black dark:bg-neutral-900 dark:text-white"
@@ -204,13 +222,33 @@ export default function CheckoutPage() {
                 </select>
 
                 <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={delivery}
-                    onChange={(e) => setDelivery(e.target.checked)}
-                  />
+                   <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDelivery(true)}
+                  className={`px-4 py-2 text-sm rounded-lg border transition ${
+                    delivery
+                      ? "bg-black text-white dark:bg-white dark:text-black"
+                      : "bg-white text-black dark:bg-neutral-900 dark:text-white"
+                  }`}
+                >
+                  Haa
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDelivery(false)}
+                  className={`px-4 py-2 text-sm rounded-lg border transition ${
+                    !delivery
+                      ? "bg-black text-white dark:bg-white dark:text-black"
+                      : "bg-white text-black dark:bg-neutral-900 dark:text-white"
+                  }`}
+                >
+                  Maya
+                </button>
+              </div>
                   <span className="text-black dark:text-white">
-                    Delivery (min $5 order)
+                    Delivery Ma Rabtaa
                   </span>
                 </div>
 
