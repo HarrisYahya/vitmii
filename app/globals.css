@@ -154,3 +154,27 @@
     @apply bg-background text-foreground;
   }
 }
+/* =========================
+   PRINT FIX (INVOICE ONLY)
+========================= */
+@media print {
+
+  body * {
+    visibility: hidden;
+  }
+
+  #printable-invoice,
+  #printable-invoice * {
+    visibility: visible;
+  }
+
+  #printable-invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+}
